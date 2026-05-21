@@ -20,11 +20,25 @@ import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
 
 import java.util.List;
 import java.util.Scanner;
+import java.util.logging.ConsoleHandler;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Le RAG facile !
  */
 public class RagNaif {
+
+    private static void configureLogger() {
+        // Configure le logger sous-jacent (java.util.logging)
+        Logger packageLogger = Logger.getLogger("dev.langchain4j");
+        packageLogger.setLevel(Level.FINE); // Ajuster niveau
+        // Ajouter un handler pour la console pour faire afficher les logs
+        ConsoleHandler handler = new ConsoleHandler();
+        handler.setLevel(Level.FINE);
+        packageLogger.addHandler(handler);
+    }
+
 
     // Assistant conversationnel
     interface Assistant {
@@ -33,6 +47,8 @@ public class RagNaif {
     }
 
     public static void main(String[] args) {
+        configureLogger();
+
         String llmKey = System.getenv("GEMINI_KEY");
         if (llmKey == null || llmKey.isBlank()) {
             System.out.println("La variable d'environnement GEMINI_KEY n'est pas définie.");
@@ -46,6 +62,7 @@ public class RagNaif {
                 .apiKey(llmKey)
                 .modelName("gemini-2.5-flash")
                 .temperature(0.3)
+                .logRequestsAndResponses(true)
                 .build();;
 
         // -- Phase 1 du RAG : enregistrement des embeddings --
