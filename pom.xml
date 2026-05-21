@@ -39,6 +39,7 @@
             <artifactId>langchain4j-google-ai-gemini</artifactId>
         </dependency>
 
+
         <!-- Embedding model local (AllMiniLm) -->
         <dependency>
             <groupId>dev.langchain4j</groupId>

@@ -47,6 +47,7 @@ public class RagNaif {
     }
 
     public static void main(String[] args) {
+
         configureLogger();
 
         String llmKey = System.getenv("GEMINI_KEY");
