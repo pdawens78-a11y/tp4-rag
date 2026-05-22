@@ -103,9 +103,17 @@ public class Test5 {
                 .build();
 
         // DefaultQueryRouter avec les 2 ContentRetrievers
-
+         /*
         QueryRouter queryRouter = new DefaultQueryRouter(contentRetriever, retrieverWeb);
+        */
 
+        Map<ContentRetriever, String> descriptions = new HashMap<>();
+        descriptions.put(contentRetriever,
+                "Cours sur le RAG (Retrieval-Augmented Generation), le fine-tuning et l'IA");
+        descriptions.put(retrieverWeb,
+                "Informations récentes sur le Web, événements actuels, actualités");
+
+        QueryRouter queryRouter = new LanguageModelQueryRouter(model, descriptions);
 
 
         // RetrievalAugmentor avec le QueryRouter
