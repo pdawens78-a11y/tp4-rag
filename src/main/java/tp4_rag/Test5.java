@@ -13,20 +13,21 @@ import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.embedding.onnx.allminilml6v2.AllMiniLmL6V2EmbeddingModel;
 import dev.langchain4j.model.googleai.GoogleAiGeminiChatModel;
-import dev.langchain4j.model.input.Prompt;
-import dev.langchain4j.model.input.PromptTemplate;
 import dev.langchain4j.rag.DefaultRetrievalAugmentor;
 import dev.langchain4j.rag.RetrievalAugmentor;
 import dev.langchain4j.rag.content.retriever.ContentRetriever;
 import dev.langchain4j.rag.content.retriever.EmbeddingStoreContentRetriever;
-import dev.langchain4j.rag.query.Query;
+import dev.langchain4j.rag.content.retriever.WebSearchContentRetriever;
+import dev.langchain4j.rag.query.router.DefaultQueryRouter;
+import dev.langchain4j.rag.query.router.LanguageModelQueryRouter;
 import dev.langchain4j.rag.query.router.QueryRouter;
 import dev.langchain4j.service.AiServices;
 import dev.langchain4j.store.embedding.EmbeddingStore;
 import dev.langchain4j.store.embedding.inmemory.InMemoryEmbeddingStore;
+import dev.langchain4j.web.search.WebSearchEngine;
+import dev.langchain4j.web.search.tavily.TavilyWebSearchEngine;
 
-import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Scanner;
@@ -50,13 +51,19 @@ public class Test5 {
 
         String llmKey = System.getenv("GEMINI_KEY");
         if (llmKey == null || llmKey.isBlank()) {
-            System.out.println("La variable d'environnement GEMINI_KEY n'est pas définie.");
+            System.out.println("La variable d'environnement GEMINI_2 n'est pas définie.");
+            return;
+        }
+
+        String tavilyKey = System.getenv("TAVILY_API_KEY");
+        if (tavilyKey == null || tavilyKey.isBlank()) {
+            System.out.println("La variable d'environnement tavily_key n'est pas définie.");
             return;
         }
 
         ChatModel model = GoogleAiGeminiChatModel.builder()
                 .apiKey(llmKey)
-                .modelName("gemini-3-flash")
+                .modelName("gemini-2.5-flash")
                 .temperature(0.3)
                 .logRequestsAndResponses(true)
                 .build();
@@ -85,39 +92,32 @@ public class Test5 {
                 .minScore(0.5)
                 .build();
 
-        // CORRECTION 1 : une seule déclaration de la classe interne
-        class QueryRouterPourEviterRag implements QueryRouter {
-
-            @Override
-            public Collection<ContentRetriever> route(Query query) {
-                PromptTemplate template = PromptTemplate.from(
-                        "Est-ce que la requête '{{requete}}' porte sur l'IA ? " +
-                                "Réponds seulement par 'oui', 'non' ou 'peut-être'."
-                );
-                Prompt prompt = template.apply(Map.of("requete", query.text()));
-
-                String reponse = model.chat(prompt.text());
-
-                System.out.println("[QueryRouter] Question : " + query.text());
-                System.out.println("[QueryRouter] Réponse LM : " + reponse);
-
-                if (reponse.toLowerCase().contains("non")) {
-                    return Collections.emptyList();
-                } else {
-                    return Collections.singletonList(contentRetriever);
-                }
-            }
-        }
-
-        QueryRouter monQueryRouter = new QueryRouterPourEviterRag();
-
-        RetrievalAugmentor monRetrievalAugmentor = DefaultRetrievalAugmentor.builder()
-                .queryRouter(monQueryRouter)
+        // WebSearchEngine Tavily
+        WebSearchEngine webSearchEngine = TavilyWebSearchEngine.builder()
+                .apiKey(tavilyKey)
                 .build();
 
+        // ContentRetriever pour le Web
+        ContentRetriever retrieverWeb = WebSearchContentRetriever.builder()
+                .webSearchEngine(webSearchEngine)
+                .build();
+
+        // DefaultQueryRouter avec les 2 ContentRetrievers
+
+        QueryRouter queryRouter = new DefaultQueryRouter(contentRetriever, retrieverWeb);
+
+
+
+        // RetrievalAugmentor avec le QueryRouter
+        RetrievalAugmentor monRetrievalAugmentor = DefaultRetrievalAugmentor.builder()
+                .queryRouter(queryRouter)
+                .build();
+
+        // Mémoire pour 10 messages
         MessageWindowChatMemory memory = MessageWindowChatMemory.withMaxMessages(10);
 
-        // CORRECTION 2 : monRetrievalAugmentor au lieu de retrievalAugmentor
+
+        // Création de l'assistant
         Assistant assistant = AiServices.builder(Assistant.class)
                 .chatModel(model)
                 .chatMemory(memory)

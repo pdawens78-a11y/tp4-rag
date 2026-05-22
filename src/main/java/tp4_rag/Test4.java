@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 public class Test4 {
 
     private static void configureLogger() {
-        Logger packageLogger = Logger.getLogger("dev.rag");
+        Logger packageLogger = Logger.getLogger("dev.langchain4j");
         packageLogger.setLevel(Level.FINE);
         ConsoleHandler handler = new ConsoleHandler();
         handler.setLevel(Level.FINE);
@@ -56,7 +56,7 @@ public class Test4 {
 
         ChatModel model = GoogleAiGeminiChatModel.builder()
                 .apiKey(llmKey)
-                .modelName("gemini-3-flash")
+                .modelName("gemini-2.5-flash")
                 .temperature(0.3)
                 .logRequestsAndResponses(true)
                 .build();

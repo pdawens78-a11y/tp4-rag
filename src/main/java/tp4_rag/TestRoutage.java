@@ -89,7 +89,7 @@ public class TestRoutage {
         // et il est donc logique de diminuer la température.
         ChatModel model = GoogleAiGeminiChatModel.builder()
                 .apiKey(llmKey)
-                .modelName("gemini-2.0-flash")
+                .modelName("gemini-2.5-flash")
                 .temperature(0.3)
                 .logRequestsAndResponses(true)
                 .build();;
